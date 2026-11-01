@@ -44,11 +44,13 @@ import { useWalletUI } from "./Providers";
 export function TradePanel({
   token,
   order,
+  inactiveReason,
   onOrder,
   onRefresh,
 }: {
   token: Squeek;
   order?: SignedOrder;
+  inactiveReason?: string;
   onOrder: (o: SignedOrder | null) => void;
   onRefresh: () => void;
 }) {
@@ -264,11 +266,18 @@ export function TradePanel({
     <section className="trade-panel" aria-label="Trade this Squeek">
       <h2 className="sr-only">Trade Squeek #{token.id}</h2>
       <div className="trade-top">
-        <span className="muted">{order ? "Asking price" : "Availability"}</span>
+        <span className="muted">
+          {order ? inactiveReason ? "Saved asking price" : "Asking price" : "Availability"}
+        </span>
         <strong>
           {order ? `${decimal(orderPrice(order), 18, 8)} ETH` : "Not listed"}
         </strong>
       </div>
+      {inactiveReason && (
+        <p className="warning-text" role="status">
+          {inactiveReason}. Cancel this saved order on-chain before listing again.
+        </p>
+      )}
       {!address ? (
         <button className="button primary full" onClick={connect}>
           Connect to {order ? "buy" : "list a Squeek"}

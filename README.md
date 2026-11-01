@@ -2,7 +2,7 @@
 
 A static, wallet-connected marketplace for Squeekchain’s Squeeks on **Sepolia only (11155111)**. Browse real DotGrid NFTs, inspect the whole mining position, find owned Squeeks, and trade with signed Seaport 1.6 orders. Test assets have no monetary value.
 
-The deliverable is `dist/index.html` and its local assets, with the Next.js App Router / TypeScript / Tailwind source, lockfile, tests, and screenshots alongside it. Hosting and the public repository URL are assigned by the delivery platform; this build does not claim an external deployment URL.
+The deliverable is `dist/index.html` and its local assets, with the Next.js App Router / TypeScript / Tailwind source, lockfile, tests, and [key-flow screenshots](artifacts/screenshots/README.md) alongside it. Hosting and the public repository URL are assigned by the delivery platform; this build does not claim an external deployment URL.
 
 ## Install, run, and rebuild
 
@@ -33,7 +33,7 @@ Preview the production export at `http://localhost:4387/preview/`. `npm run buil
 3. **List:** open an owned Squeek, enter a fixed total price in Sepolia ETH, choose an expiry, and review. Approve **that individual NFT** for Seaport, then sign the EIP-712 order. The royalty is included in the entered total; the marketplace fee is zero. The NFT stays with its owner.
 4. Export the order JSON or copy its share link. The recipient uses **Import listing**, which verifies the seller signature, current owner, approval, counter, order status, expiry, and current royalty.
 5. **Buy:** review the refreshed position and simulated fulfillment, then confirm the purchase in your wallet. Seller and royalty payments settle atomically with the NFT transfer through Seaport.
-6. **Cancel:** the seller selects **Cancel listing on-chain** and confirms the simulated Seaport cancellation in their wallet. Previously shared copies then fail on-chain.
+6. **Cancel:** the seller selects **Cancel listing on-chain** and confirms the simulated Seaport cancellation in their wallet. Previously shared copies then fail on-chain. Saved orders remain available to their seller when approval is revoked; find them under **Listed → Your inactive orders** or on the Squeek detail. They stay out of active listings. Cancel before approving Seaport again, since renewed approval can reactivate an uncancelled order.
 
 Signed orders are stored **only in the current browser**. There is no global order book, server, OpenSea API integration, fake liquidity, or seeded listing. Other visitors see an order after importing its link/file. Clearing browser storage does not cancel an order: use the on-chain cancellation first. The supported order format is one Squeek, a full-open fixed-price native-ETH order, and the current ERC-2981 royalty. Criteria, auctions, bundles, offers, and other collections are rejected.
 
@@ -70,10 +70,10 @@ For the reproducible Chromium interaction and accessibility run:
 
 ```sh
 npx playwright install chromium
-npm run check:browser
+npm run check:revision
 ```
 
-The script starts and closes its own static preview at a subpath, checks the actual export, and writes JSON evidence and screenshots under `artifacts/`. Wallet discovery, switching, and rejection use an explicitly labeled mock provider; no signing key is generated and no transaction is broadcast. Browser binaries are development tools and are not part of the export.
+The revision script starts and closes its own static preview at a subpath, checks the actual export, and writes `artifacts/revision-results.json` plus the screenshots below. It accepts an optional `--rpc <Sepolia endpoint>` for read transport. Wallet discovery, switching, and rejection use a read-only mock provider. The purchase capture also mocks approval, signature verification, and fulfillment simulation; these overrides are limited to the test browser and visibly labeled in the image. No signing key is generated, no real listing is created, and no transaction is broadcast. Browser binaries are development tools and are not part of the export. The earlier general interaction suite remains available as `npm run check:browser`; its live-data expectations may change with chain state.
 
 ## Scope and limitations
 
@@ -85,12 +85,24 @@ No escrow contract is deployed: the optional on-chain path uses existing Seaport
 
 ## Recorded check results
 
-The final production build, standalone typecheck, and development-server smoke check passed. All 15 logic/order/reorg tests, 23 Chromium interaction checks, and all 16 taste@1 design checks passed. The primary axe scan reported zero violations. Live graph verification, Seaport order-hash comparison, and an unsigned approval simulation passed without sending a transaction. The connected portfolio returned the genuine holder’s 10 Squeeks using direct reads after historical log requests proved unreliable.
+The revision production build and standalone typecheck passed. All 15 existing logic/order/reorg tests, 19 Chromium regression checks, and all 16 taste@1 design checks passed. Browse and inactive-order axe scans reported zero violations. Official deployment verification, Seaport order-hash comparison, and an unsigned approval simulation passed. Revoked-order cancellation rechecked the live owner and passed a real unsigned simulation before a read-only wallet rejected submission.
 
-WebKit could not launch because required system libraries were absent. Real wallet signing, purchase/cancel execution, physical app launches, screen-reader use, and native zoom remain unverified. Exact evidence and the final byte budget are linked below.
+WebKit could not launch because required system libraries were absent. Real wallet signing, purchase/cancel execution and receipts, physical app launches, screen-reader use, and native zoom remain unverified. The purchase review screenshot demonstrates a simulated wallet/order state, not a successful on-chain purchase.
+
+## Key-flow screenshots
+
+These captures are included in the repository, not just generated on demand. The desktop captures use a 1440px viewport; the mobile capture is 390px wide.
+
+| Flow | Capture | Data and wallet state |
+| --- | --- | --- |
+| Browse | [Desktop](artifacts/screenshots/explore-desktop.png) · [Mobile](artifacts/screenshots/explore-mobile.png) | Desktop uses verified chain reads; mobile shows the labeled historical fallback. |
+| Squeek details | [Full detail](artifacts/screenshots/squeek-detail.png) | Verified on-chain DotGrid image, position, owner, royalty, and metadata. |
+| List for sale | [Listing review](artifacts/screenshots/listing-review.png) | Simulated seller wallet, live contract reads; nothing signed. |
+| Buy | [Purchase review](artifacts/screenshots/purchase-review.png) | Simulated buyer wallet and order, with approval/signature/simulation overrides disclosed in the capture. |
+| Cancel after revocation | [Revoked listing](artifacts/screenshots/revoked-listing.png) | Simulated seller/order and revoked approval; cancellation remains available. |
 
 ## Validation and design
 
-See [the validation report](artifacts/validation.md), [live checks](artifacts/live-check.json), [interaction results](artifacts/interaction-results.json), [screenshots](artifacts/screenshots/), and [DESIGN.md](DESIGN.md). The report records actual commands, corrected findings, six-domain Better Interface coverage, and browser limitations. It is worker-side evidence, not independent certification.
+See [the validation report](artifacts/validation.md), [live checks](artifacts/live-check.json), [regression results](artifacts/revision-results.json), [screenshots](artifacts/screenshots/README.md), and [DESIGN.md](DESIGN.md). The report records actual commands, corrected findings, six-domain Better Interface coverage, and browser limitations. It is worker-side evidence, not independent certification.
 
-Design guidance: Jakub Krehel’s Better Interface (MIT), adapted from commit `267330e1adfc66a718fb65fa6918c1f06d0a689e`; documentation method: Paul Bakaus’s Impeccable (Apache-2.0), commit `9d715cc4f5564a990ca8345abfdd5df6dc9b41c8`. [Notices and license texts](artifacts/DESIGN-GUIDANCE-LICENSE) are retained. DM Sans is bundled under its [OFL](public/fonts/OFL.txt). Wallet marks come from RainbowKit under its [MIT license](artifacts/WALLET-MARKS-LICENSE); Seaport’s [license](artifacts/SEAPORT-LICENSE) is retained. The Squeekchain skill archive was retrieved and inspected locally; its documentation was used as reference data.
+Design guidance: Jakub Krehel’s Better Interface (MIT), adapted from commit `267330e1adfc66a718fb65fa6918c1f06d0a689e`; documentation method: Paul Bakaus’s Impeccable (Apache-2.0), commit `9d715cc4f5564a990ca8345abfdd5df6dc9b41c8`. [Notices and license texts](artifacts/DESIGN-GUIDANCE-LICENSE) are retained. DM Sans is bundled under its [OFL](public/fonts/OFL.txt). Wallet marks come from RainbowKit under its [MIT license](artifacts/WALLET-MARKS-LICENSE); Seaport’s [license](artifacts/SEAPORT-LICENSE) is retained. The official Squeekchain developer documentation is used as reference data; contract and wallet configuration are unchanged in this revision.

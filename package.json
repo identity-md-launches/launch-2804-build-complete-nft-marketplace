@@ -9,7 +9,8 @@
     "test": "tsx --test tests/*.test.ts",
     "preview": "node scripts/preview.mjs",
     "snapshot": "tsx scripts/snapshot.ts",
-    "check:browser": "node scripts/validate-browser.mjs"
+    "check:browser": "node scripts/validate-browser.mjs",
+    "check:revision": "node scripts/validate-revision.mjs"
   },
   "dependencies": {
     "next": "16.4.3",

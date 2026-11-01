@@ -213,6 +213,12 @@ export async function verifyExchange(blockNumber: bigint) {
   })) as [string, Hex, Address];
   if (info[0] !== "1.6") throw Error("Unexpected Seaport version.");
 }
+export class OrderApprovalError extends Error {
+  constructor() {
+    super("The seller has not approved Seaport for this Squeek.");
+    this.name = "OrderApprovalError";
+  }
+}
 export async function inspectOrder(
   o: SignedOrder,
 ): Promise<{
@@ -274,7 +280,7 @@ export async function inspectOrder(
   if (counter !== c.counter || status[1] || status[2] > 0n)
     throw Error("This listing was filled or cancelled.");
   if (!same(approved, SEAPORT) && !approvedAll)
-    throw Error("The seller has not approved Seaport for this Squeek.");
+    throw new OrderApprovalError();
   const royaltyPaid = c.consideration
     .slice(1)
     .filter((x) => same(x.recipient, royalty[0]))

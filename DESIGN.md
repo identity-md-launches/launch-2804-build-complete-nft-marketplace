@@ -57,6 +57,8 @@ The page, header, and footer share a centered 1360px outer width and 40px inline
 
 Detail pages use two columns for the large image and trading panel, then two columns of supporting data. Both become single columns at 600px. The mobile wallet/import dialog is a bottom sheet with safe-area padding; desktop dialogs are centered and at most 460px wide. Activity rows drop the secondary address column on phones. These are content-driven adaptations, not alternate pages.
 
+The first focusable control is **Skip to content**. It prevents hash navigation, focuses the existing `main#main-content` (`tabIndex={-1}`), and scrolls it into view while preserving the current detail, portfolio, or activity route. It reuses the existing focus token and 2px focus-visible indicator.
+
 The tested export uses hash routes (`#explore`, `#portfolio`, `#activity`, `#squeek/ID`, and shared `#order=` links) so static hosts need no route rewrite. Filters apply to the explicitly labeled loaded page; imported listings have their own browser-local collection.
 
 ## Elevation & Depth
@@ -78,9 +80,11 @@ Canonical radius tokens are 8px (`--radius-sm`), 12px (`--radius`), and 20px (`-
 | `TokenCard`, `Market.tsx` | Real NFT image, level, active power, rewards, cooldown, expandable position/ownership, price or honest unlisted state. `layout` chooses grid or horizontal list. The art link’s accessible name includes its visible level. |
 | `FilterFields`, `Market.tsx` | The same labeled native inputs/selects in desktop sidebar and mobile disclosure. Includes reset, numeric constraints, status choices, and loaded-page scope. |
 | `TokenImage`, `Market.tsx` | Isolated image element using on-chain data only, with meaningful alt text and stable aspect ratio. It never injects SVG markup. `large` selects the detail treatment. |
-| `TradePanel.tsx` | Availability/price, owner listing form, separate approval and EIP-712 signing steps, purchase review, explicit confirmation, cancellation, and export/share. Loading, simulation result, wallet prompt, receipt, rejection, and failure have text states. Wrong-chain actions stop. |
+| `TradePanel.tsx` | Availability/price, owner listing form, separate approval and EIP-712 signing steps, purchase review, explicit confirmation, cancellation, and export/share. `inactiveReason` labels a saved seller order whose availability could not be verified; revoked approval keeps cancellation visible with a saved asking price. Loading, simulation result, wallet prompt, receipt, rejection, and failure have text states. Wrong-chain actions stop. |
 | `Empty`, `Market.tsx` | Small hamster mark, concrete explanation, one recovery action. Used for filters, order book, disconnected portfolio, and unavailable tokens. |
 | Buttons and fields, `globals.css` | Neutral default, biscuit primary, danger text variant, full-width option, and icon-only utility. Controls provide hover, pressed, disabled, and 2px focus-visible states. Native semantics supply keyboard behavior. |
+
+The **Your inactive orders** section (`Market.tsx`, `.inactive-orders`) appears in Listed only for the connected offerer. It reuses `.data-table`, `.text-link`, `.fine`, `.muted`, and `.warning-text`; its only added spacing is 20px block margin, 8px below the heading, and 12px below the explanation. It links to the existing detail cancellation action and is separate from active buyer listings. Saved snapshots identify their historical block/date and ask for a refresh; live captions describe the 12-confirmation policy **at refresh time**.
 
 Cards truncate reward display to six decimals but expose the exact 18-decimal value on detail. Tiny nonzero values are shown as below the display precision rather than zero. The detail also shows the remaining scaled sub-base-unit fraction. Data is never replaced by decorative samples in loading or error states.
 

@@ -310,7 +310,7 @@ try {
   await wpage.locator(".token-card").first().waitFor({ timeout: 90000 });
   assert.match(
     await wpage.locator(".read-caption").innerText(),
-    /Ownership checked live/,
+    /Ownership checked at this block/,
   );
   await wpage.screenshot({ path: "artifacts/screenshots/owned-portfolio.png" });
   check(

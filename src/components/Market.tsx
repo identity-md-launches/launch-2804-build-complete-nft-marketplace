@@ -56,6 +56,7 @@ import {
   orderPrice,
   savedOrders,
   storeOrders,
+  OrderApprovalError,
   type SignedOrder,
 } from "@/lib/orders";
 type View = "explore" | "portfolio" | "activity";
@@ -322,6 +323,8 @@ export default function Market() {
     [detailError, setDetailError] = useState(""),
     [detailSnapshot, setDetailSnapshot] = useState<Snapshot>();
   const [orders, setOrders] = useState<SignedOrder[]>([]),
+    [localOrders, setLocalOrders] = useState<SignedOrder[]>([]),
+    [orderIssues, setOrderIssues] = useState<Record<string, string>>({}),
     [listedTokens, setListedTokens] = useState<Record<string, Squeek>>({}),
     [orderWarnings, setOrderWarnings] = useState<string[]>([]);
   const [importOpen, setImportOpen] = useState(false),
@@ -336,7 +339,8 @@ export default function Market() {
   const snapshotRef = useRef<Snapshot | undefined>(undefined);
   const request = useRef(0),
     selectionRequest = useRef(0),
-    portfolioRequest = useRef(0);
+    portfolioRequest = useRef(0),
+    orderRequest = useRef(0);
   const refresh = useCallback(async (count = 24) => {
     const req = ++request.current;
     setLoading(true);
@@ -372,11 +376,19 @@ export default function Market() {
     }
   }, []);
   const addOrder = useCallback((o: SignedOrder | null, id?: string) => {
-    setOrders((prev) => {
+    // A refresh started before a sign/cancel must not restore stale orders.
+    orderRequest.current++;
+    const update = (prev: SignedOrder[]) => {
       const next = prev.filter(
         (p) => orderToken(p) !== (o ? orderToken(o) : id),
       );
       if (o) next.push(o);
+      return next;
+    };
+    setOrders(update);
+    // Persist the complete saved set, including temporarily unfillable orders.
+    setLocalOrders((prev) => {
+      const next = update(prev);
       try {
         storeOrders(next);
       } catch {
@@ -388,9 +400,12 @@ export default function Market() {
     });
   }, []);
   const validateSaved = useCallback(async () => {
+    const req = ++orderRequest.current;
     const saved = savedOrders();
+    setLocalOrders(saved);
     const valid: SignedOrder[] = [],
       read: Record<string, Squeek> = {},
+      issues: Record<string, string> = {},
       warnings: string[] = [];
     for (const o of saved) {
       try {
@@ -398,10 +413,16 @@ export default function Market() {
         valid.push(o);
         read[token.id] = token;
       } catch (e) {
+        issues[orderHash(o)] =
+          e instanceof OrderApprovalError
+            ? "Approval revoked; order not cancelled"
+            : "Saved order; availability unverified";
         warnings.push(`Squeek #${orderToken(o)}: ${errorMessage(e)}`);
       }
     }
+    if (req !== orderRequest.current) return;
     setOrders(valid);
+    setOrderIssues(issues);
     setListedTokens(read);
     setOrderWarnings(warnings);
   }, []);
@@ -542,7 +563,16 @@ export default function Market() {
       setImportBusy(false);
     }
   };
-  const selectedOrder = orders.find((o) => orderToken(o) === selectedId);
+  const activeHashes = new Set(orders.map(orderHash));
+  const inactiveOrders = localOrders.filter(
+    (o) =>
+      address && same(o.components.offerer, address) && !activeHashes.has(orderHash(o)),
+  );
+  const selectedOrder = orders.find((o) => orderToken(o) === selectedId)
+    ?? inactiveOrders.find((o) => orderToken(o) === selectedId);
+  const selectedOrderIssue = selectedOrder && !activeHashes.has(orderHash(selectedOrder))
+    ? orderIssues[orderHash(selectedOrder)] ?? "Saved order; availability unverified"
+    : undefined;
   const navigate = (next: View) => {
     setFilters(initialFilters);
     location.hash = next === "explore" ? "explore" : next;
@@ -561,7 +591,16 @@ export default function Market() {
   };
   return (
     <>
-      <a className="skip-link" href="#main-content">
+      <a
+        className="skip-link"
+        href="#main-content"
+        onClick={(event) => {
+          event.preventDefault();
+          const main = document.getElementById("main-content");
+          main?.focus({ preventScroll: true });
+          main?.scrollIntoView();
+        }}
+      >
         Skip to content
       </a>
       <aside className="testnet-strip" aria-label="Network notice">
@@ -606,7 +645,7 @@ export default function Market() {
         </nav>
         <ConnectButton />
       </header>
-      <main id="main-content" className="page-container">
+      <main id="main-content" className="page-container" tabIndex={-1}>
         {selectedId ? (
           <>
             <button
@@ -722,6 +761,7 @@ export default function Market() {
                       key={`${selectedId}-${address ?? ""}`}
                       token={selected}
                       order={selectedOrder}
+                      inactiveReason={selectedOrderIssue}
                       onOrder={(o) => {
                         addOrder(o, selectedId);
                         if (o)
@@ -1302,6 +1342,30 @@ export default function Market() {
                             shared order book.
                           </p>
                         )}
+                        {filters.listedOnly && inactiveOrders.length > 0 && (
+                          <section className="inactive-orders" aria-labelledby="inactive-orders-heading">
+                            <h3 id="inactive-orders-heading">Your inactive orders</h3>
+                            <p className="fine muted">
+                              These saved orders are excluded from active listings.
+                              Revoking approval does not cancel an order. Cancel it
+                              on-chain before approving Seaport again.
+                            </p>
+                            <dl className="data-table">
+                              {inactiveOrders.map((o) => (
+                                <div key={orderHash(o)}>
+                                  <dt>
+                                    <a className="text-link" href={`#squeek/${orderToken(o)}`}>
+                                      Manage Squeek #{orderToken(o)} <ArrowRight size={14} />
+                                    </a>
+                                  </dt>
+                                  <dd className="warning-text">
+                                    {orderIssues[orderHash(o)] ?? "Saved order; availability unverified"}
+                                  </dd>
+                                </div>
+                              ))}
+                            </dl>
+                          </section>
+                        )}
                         {orderWarnings.length > 0 && filters.listedOnly && (
                           <details className="order-warnings">
                             <summary>
@@ -1409,9 +1473,11 @@ export default function Market() {
                                 ? "Verified at"
                                 : "Saved at"}{" "}
                               Ethereum block {current?.block || "…"}.{" "}
-                              {view === "portfolio"
-                                ? "Ownership checked live."
-                                : "12 confirmations behind the chain."}
+                              {current.source === "saved"
+                                ? "Historical snapshot. Refresh to read confirmed state."
+                                : view === "portfolio"
+                                  ? "Ownership checked at this block."
+                                  : "Read with 12 confirmations at refresh time."}
                             </span>
                           </div>
                         )}
