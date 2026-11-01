@@ -1,0 +1,36 @@
+{
+  "name": "squeek-market",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build --webpack && node scripts/export.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "preview": "node scripts/preview.mjs",
+    "snapshot": "tsx scripts/snapshot.ts",
+    "check:browser": "node scripts/validate-browser.mjs"
+  },
+  "dependencies": {
+    "next": "16.4.3",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "wagmi": "3.7.9",
+    "viem": "2.54.1",
+    "@tanstack/react-query": "5.90.21",
+    "lucide-react": "0.577.0",
+    "@coinbase/wallet-sdk": "4.3.7"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "24.12.0",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "tailwindcss": "4.3.3",
+    "@tailwindcss/postcss": "4.3.3",
+    "tsx": "4.21.0",
+    "playwright": "1.58.2",
+    "@axe-core/playwright": "4.14.0"
+  },
+  "type": "module"
+}
