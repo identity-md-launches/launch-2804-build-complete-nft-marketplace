@@ -93,6 +93,8 @@ WebKit could not launch because required system libraries were absent. Real wall
 
 These captures are included in the repository, not just generated on demand. The desktop captures use a 1440px viewport; the mobile capture is 390px wide.
 
+The mobile capture includes the full browse page. The [capture guide](artifacts/screenshots/README.md) documents data sources, simulated states, and reproduction steps; the [capture inventory](artifacts/screenshots/manifest.json) records dimensions and hashes. Before packaging, run `npm run check:screenshots` to validate the six shipped PNGs and all local README links without regenerating them.
+
 | Flow | Capture | Data and wallet state |
 | --- | --- | --- |
 | Browse | [Desktop](artifacts/screenshots/explore-desktop.png) · [Mobile](artifacts/screenshots/explore-mobile.png) | Desktop uses verified chain reads; mobile shows the labeled historical fallback. |

@@ -194,7 +194,7 @@ try {
   await op.getByRole('button', { name: 'Clear filters', exact: true }).click();
   await op.getByRole('button', { name: 'Filters', exact: true }).click();
   check('mobile filters expose an empty state and reset successfully');
-  await screenshot(op, 'explore-mobile');
+  await screenshot(op, 'explore-mobile', undefined, true);
   for (const width of [320, 390, 760, 1440]) {
     await op.setViewportSize({ width, height: 844 });
     assert(await op.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), `overflow at ${width}`);

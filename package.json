@@ -10,7 +10,8 @@
     "preview": "node scripts/preview.mjs",
     "snapshot": "tsx scripts/snapshot.ts",
     "check:browser": "node scripts/validate-browser.mjs",
-    "check:revision": "node scripts/validate-revision.mjs"
+    "check:revision": "node scripts/validate-revision.mjs",
+    "check:screenshots": "node scripts/check-screenshots.mjs"
   },
   "dependencies": {
     "next": "16.4.3",
